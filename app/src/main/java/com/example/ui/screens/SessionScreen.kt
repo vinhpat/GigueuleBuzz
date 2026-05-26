@@ -17,8 +17,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.viewmodel.BuzzerUiState
 import com.example.network.ParticipantDto
+import com.example.network.RoundHistoryDto
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
 
@@ -88,6 +91,7 @@ fun SessionScreen(
             questionCounter = session.questionCounter,
             startTime = session.startTime,
             participants = session.participants,
+            roundHistory = session.roundHistory,
             onStartQuiz = onStartQuiz,
             onStopQuiz = onStopQuiz,
             onNextQuestion = onNextQuestion,
@@ -98,6 +102,7 @@ fun SessionScreen(
         ParticipantBuzzer(
             sessionName = session.sessionName ?: "PaddyBuzz",
             status = session.status,
+            currentRound = session.questionCounter,
             myParticipant = session.participants.find { it.userName == uiState.userName },
             userName = uiState.userName ?: "",
             onBuzz = onBuzz,
@@ -114,12 +119,16 @@ fun MasterDashboard(
     questionCounter: Int,
     startTime: Long?,
     participants: List<ParticipantDto>,
+    roundHistory: List<RoundHistoryDto>,
     onStartQuiz: () -> Unit,
     onStopQuiz: () -> Unit,
     onNextQuestion: () -> Unit,
     onResetQuiz: () -> Unit,
     onLeave: () -> Unit
 ) {
+    var participantsExpanded by remember { mutableStateOf(true) }
+    var historyExpanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -179,10 +188,10 @@ fun MasterDashboard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("QUESTION $questionCounter", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, letterSpacing = 1.sp)
+                    Text("ROUND $questionCounter", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, letterSpacing = 1.sp)
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(onClick = onNextQuestion, modifier = Modifier.size(24.dp).background(MaterialTheme.colorScheme.primary.copy(alpha=0.1f), CircleShape)) {
-                        Icon(Icons.Default.Add, contentDescription = "Next Question", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Add, contentDescription = "Next Round", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -252,8 +261,8 @@ fun MasterDashboard(
                 }
                 
                 if (status == "active" || (status == "stopped" && elapsedMs > 0)) {
-                    val seconds = elapsedMs / 1000
-                    val millis = (elapsedMs % 1000) / 10
+                    val seconds = (elapsedMs / 1000).toInt()
+                    val millis = ((elapsedMs % 1000) / 10).toInt()
                     Text(
                         String.format(java.util.Locale.US, "%02d:%02d", seconds, millis),
                         fontSize = 32.sp,
@@ -272,42 +281,91 @@ fun MasterDashboard(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
         ) {
-            Text("PARTICIPANTS (${participants.size})", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B), letterSpacing = 1.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-            participants.sortedBy { it.userName }.forEach { p ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White)
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { participantsExpanded = !participantsExpanded }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("PARTICIPANTS (${participants.size})", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B), letterSpacing = 1.sp, modifier = Modifier.weight(1f))
+                Icon(
+                    if (participantsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (participantsExpanded) "Collapse" else "Expand",
+                    tint = Color(0xFF64748B)
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (participantsExpanded) {
+                participants.sortedBy { it.userName }.forEach { p ->
+                    Row(
                         modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFEEF2FF)),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(p.userName.take(1).uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFEEF2FF)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(p.userName.take(1).uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(p.userName, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155), modifier = Modifier.weight(1f))
+                        
+                        if (status == "stopped" && p.buzzTime != null && startTime != null) {
+                            val buzzElapsed = p.buzzTime - startTime
+                            val bSec = (buzzElapsed / 1000).toInt()
+                            val bMillis = ((buzzElapsed % 1000) / 10).toInt()
+                            Text(
+                                String.format(java.util.Locale.US, "+%02d:%02d", bSec, bMillis),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF4CAF50)
+                            )
+                        } else if (p.buzzTime != null) {
+                            Icon(Icons.Default.Add, contentDescription = "Buzzed", tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                        }
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(p.userName, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155), modifier = Modifier.weight(1f))
-                    
-                    if (status == "stopped" && p.buzzTime != null && startTime != null) {
-                        val buzzElapsed = p.buzzTime - startTime
-                        val bSec = buzzElapsed / 1000
-                        val bMillis = (buzzElapsed % 1000) / 10
-                        Text(
-                            String.format(java.util.Locale.US, "+%02d:%02d", bSec, bMillis),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF4CAF50)
-                        )
-                    } else if (p.buzzTime != null) {
-                        Icon(Icons.Default.Add, contentDescription = "Buzzed", tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { historyExpanded = !historyExpanded }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("ROUND HISTORY (${roundHistory.size})", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B), letterSpacing = 1.sp, modifier = Modifier.weight(1f))
+                Icon(
+                    if (historyExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (historyExpanded) "Collapse" else "Expand",
+                    tint = Color(0xFF64748B)
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (historyExpanded) {
+                roundHistory.sortedBy { it.roundNumber }.forEach { h ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Round ${h.roundNumber}", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155), modifier = Modifier.weight(1f))
+                        Text(h.winnerName ?: "No Winner", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -325,6 +383,7 @@ fun MasterDashboard(
 fun ParticipantBuzzer(
     sessionName: String,
     status: String,
+    currentRound: Int,
     myParticipant: ParticipantDto?,
     userName: String,
     onBuzz: () -> Unit,
@@ -412,7 +471,7 @@ fun ParticipantBuzzer(
                         letterSpacing = 1.sp
                     )
                     Text(
-                        if (status == "active") "Tap the buzzer now!" else "Wait for the host to signal...",
+                        if (status == "active") "Tap the buzzer now!" else "Wait for Round $currentRound to start...",
                         fontSize = 13.sp,
                         color = Color(0xFF4338CA)
                     )

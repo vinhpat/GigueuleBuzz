@@ -11,6 +11,11 @@ data class ParticipantDto(
     val buzzTime: Long? = null
 )
 
+data class RoundHistoryDto(
+    val roundNumber: Int,
+    val winnerName: String? = null
+)
+
 data class SessionDto(
     val sessionId: String,
     val sessionName: String? = null,
@@ -19,7 +24,8 @@ data class SessionDto(
     val status: String, // "waiting", "active", "stopped"
     val questionCounter: Int = 1,
     val startTime: Long? = null,
-    val participants: List<ParticipantDto>
+    val participants: List<ParticipantDto>,
+    val roundHistory: List<RoundHistoryDto> = emptyList()
 )
 
 data class CreateSessionRequest(

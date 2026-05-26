@@ -29,7 +29,8 @@ app.post('/api/session/create', (req, res) => {
         status: 'waiting',
         questionCounter: 1,
         startTime: null,
-        participants: []
+        participants: [],
+        roundHistory: []
     };
     res.json(sessions[id]);
 });
@@ -80,6 +81,19 @@ app.post('/api/session/next-question', (req, res) => {
     const session = sessions[sessionId];
     
     if (session) {
+        let winner = null;
+        let earliestBuzz = Infinity;
+        session.participants.forEach(p => {
+            if (p.buzzTime !== null && p.buzzTime < earliestBuzz) {
+                earliestBuzz = p.buzzTime;
+                winner = p.userName;
+            }
+        });
+        session.roundHistory = session.roundHistory || [];
+        session.roundHistory.push({
+            roundNumber: session.questionCounter || 1,
+            winnerName: winner || null
+        });
         session.questionCounter = (session.questionCounter || 1) + 1;
         session.status = 'waiting';
         session.startTime = null;
