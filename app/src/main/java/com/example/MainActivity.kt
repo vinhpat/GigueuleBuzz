@@ -122,9 +122,7 @@ fun BuzzerApp(viewModel: BuzzerViewModel) {
                     onBuzz = { viewModel.buzz() },
                     onLeave = {
                         viewModel.clearError()
-                        navController.navigate(HomeRoute) {
-                            popUpTo(0)
-                        }
+                        navController.popBackStack()
                     }
                 )
             }

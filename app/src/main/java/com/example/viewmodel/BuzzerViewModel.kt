@@ -44,6 +44,8 @@ class BuzzerViewModel(
             }.onFailure { error ->
                 val getErrorMessage = if (error is retrofit2.HttpException && error.code() == 404) {
                     "Session not found."
+                } else if (error is retrofit2.HttpException && error.code() == 401) {
+                    "API Access Denied (HTTP 401). If using Vercel, please disable 'Vercel Authentication' for preview deployments."
                 } else if (error is java.net.UnknownHostException || error is java.net.ConnectException || error is java.net.SocketTimeoutException) {
                     "Unable to connect to the server."
                 } else {
@@ -74,6 +76,8 @@ class BuzzerViewModel(
             }.onFailure { error ->
                 val getErrorMessage = if (error is retrofit2.HttpException && error.code() == 404) {
                     "Session not found."
+                } else if (error is retrofit2.HttpException && error.code() == 401) {
+                    "API Access Denied (HTTP 401). If using Vercel, please disable 'Vercel Authentication' for preview deployments."
                 } else if (error is java.net.UnknownHostException || error is java.net.ConnectException || error is java.net.SocketTimeoutException) {
                     "Unable to connect to the server."
                 } else {
