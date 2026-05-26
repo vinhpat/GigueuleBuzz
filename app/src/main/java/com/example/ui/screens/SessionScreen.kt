@@ -16,13 +16,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.viewmodel.BuzzerUiState
+import com.example.network.ParticipantDto
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun SessionScreen(
     uiState: BuzzerUiState,
     onStartQuiz: () -> Unit,
+    onStopQuiz: () -> Unit,
     onResetQuiz: () -> Unit,
     onBuzz: () -> Unit,
+    onNextQuestion: () -> Unit,
     onLeave: () -> Unit
 ) {
     val session = uiState.session
@@ -78,9 +85,12 @@ fun SessionScreen(
             sessionId = session.sessionId,
             sessionName = session.sessionName ?: "PaddyBuzz",
             status = session.status,
+            questionCounter = session.questionCounter,
+            startTime = session.startTime,
             participants = session.participants,
-            winner = session.winner,
             onStartQuiz = onStartQuiz,
+            onStopQuiz = onStopQuiz,
+            onNextQuestion = onNextQuestion,
             onResetQuiz = onResetQuiz,
             onLeave = onLeave
         )
@@ -88,7 +98,7 @@ fun SessionScreen(
         ParticipantBuzzer(
             sessionName = session.sessionName ?: "PaddyBuzz",
             status = session.status,
-            winner = session.winner,
+            myParticipant = session.participants.find { it.userName == uiState.userName },
             userName = uiState.userName ?: "",
             onBuzz = onBuzz,
             onLeave = onLeave
@@ -101,9 +111,12 @@ fun MasterDashboard(
     sessionId: String,
     sessionName: String,
     status: String,
-    participants: List<String>,
-    winner: String?,
+    questionCounter: Int,
+    startTime: Long?,
+    participants: List<ParticipantDto>,
     onStartQuiz: () -> Unit,
+    onStopQuiz: () -> Unit,
+    onNextQuestion: () -> Unit,
     onResetQuiz: () -> Unit,
     onLeave: () -> Unit
 ) {
@@ -165,10 +178,19 @@ fun MasterDashboard(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("QUESTION $questionCounter", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, letterSpacing = 1.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = onNextQuestion, modifier = Modifier.size(24.dp).background(MaterialTheme.colorScheme.primary.copy(alpha=0.1f), CircleShape)) {
+                        Icon(Icons.Default.Add, contentDescription = "Next Question", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text("QUIZ STATUS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8), letterSpacing = 1.sp)
                 val statusColor = when (status) {
                     "active" -> Color(0xFF4CAF50)
-                    "finished" -> Color(0xFFEF4444)
+                    "stopped" -> Color(0xFFEF4444)
                     else -> MaterialTheme.colorScheme.primary
                 }
                 Text(
@@ -177,11 +199,6 @@ fun MasterDashboard(
                     fontWeight = FontWeight.Black,
                     color = statusColor
                 )
-
-                if (status == "finished" && winner != null) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("🎉 WINNER: $winner 🎉", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -198,8 +215,18 @@ fun MasterDashboard(
                         Text("START", fontWeight = FontWeight.Bold)
                     }
                     Button(
+                        onClick = onStopQuiz, 
+                        enabled = status == "active",
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                    ) {
+                        Text("STOP", fontWeight = FontWeight.Bold)
+                    }
+                    Button(
                         onClick = onResetQuiz, 
-                        enabled = status == "finished",
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp),
@@ -208,6 +235,31 @@ fun MasterDashboard(
                     ) {
                         Text("RESET", fontWeight = FontWeight.Bold)
                     }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                var elapsedMs by remember { mutableStateOf(0L) }
+                LaunchedEffect(status, startTime) {
+                    if (status == "active" && startTime != null) {
+                        while (true) {
+                            elapsedMs = System.currentTimeMillis() - startTime
+                            delay(50)
+                        }
+                    } else if (status == "waiting") {
+                        elapsedMs = 0L
+                    }
+                }
+                
+                if (status == "active" || (status == "stopped" && elapsedMs > 0)) {
+                    val seconds = elapsedMs / 1000
+                    val millis = (elapsedMs % 1000) / 10
+                    Text(
+                        String.format(java.util.Locale.US, "%02d:%02d", seconds, millis),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFF334155)
+                    )
                 }
             }
         }
@@ -222,7 +274,7 @@ fun MasterDashboard(
         ) {
             Text("PARTICIPANTS (${participants.size})", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B), letterSpacing = 1.sp)
             Spacer(modifier = Modifier.height(12.dp))
-            participants.forEach { p ->
+            participants.sortedBy { it.userName }.forEach { p ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -239,10 +291,24 @@ fun MasterDashboard(
                             .background(Color(0xFFEEF2FF)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(p.take(1).uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Text(p.userName.take(1).uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(p, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155))
+                    Text(p.userName, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155), modifier = Modifier.weight(1f))
+                    
+                    if (status == "stopped" && p.buzzTime != null && startTime != null) {
+                        val buzzElapsed = p.buzzTime - startTime
+                        val bSec = buzzElapsed / 1000
+                        val bMillis = (buzzElapsed % 1000) / 10
+                        Text(
+                            String.format(java.util.Locale.US, "+%02d:%02d", bSec, bMillis),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4CAF50)
+                        )
+                    } else if (p.buzzTime != null) {
+                        Icon(Icons.Default.Add, contentDescription = "Buzzed", tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                    }
                 }
             }
         }
@@ -259,7 +325,7 @@ fun MasterDashboard(
 fun ParticipantBuzzer(
     sessionName: String,
     status: String,
-    winner: String?,
+    myParticipant: ParticipantDto?,
     userName: String,
     onBuzz: () -> Unit,
     onLeave: () -> Unit
@@ -309,13 +375,13 @@ fun ParticipantBuzzer(
 
         Spacer(modifier = Modifier.height(24.dp))
         
-        if (status == "finished" && winner != null) {
-            val isMe = winner == userName
+        if (status == "stopped") {
+            val hasBuzzed = myParticipant?.buzzTime != null
             Text(
-                text = if (isMe) "🎉 YOU WON! 🎉" else "$winner buzzed first!",
+                text = if (hasBuzzed) "🎉 YOU BUZZED! 🎉" else "ROUND OVER",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isMe) Color(0xFF4CAF50) else Color(0xFFEF4444)
+                color = if (hasBuzzed) Color(0xFF4CAF50) else Color(0xFF64748B)
             )
             Spacer(modifier = Modifier.height(24.dp))
         } else {
@@ -359,7 +425,8 @@ fun ParticipantBuzzer(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.Center
         ) {
-            val isActive = status == "active"
+            val isBuzzed = myParticipant?.buzzTime != null
+            val isActive = status == "active" && !isBuzzed
             
             // Outer rings
             Box(modifier = Modifier
@@ -379,22 +446,24 @@ fun ParticipantBuzzer(
                     .clip(CircleShape)
                     .background(
                         brush = androidx.compose.ui.graphics.Brush.linearGradient(
-                            colors = if (isActive) listOf(Color(0xFF6366F1), Color(0xFF4338CA)) else listOf(Color.Gray, Color.DarkGray)
+                            colors = if (isBuzzed) listOf(Color(0xFF4CAF50), Color(0xFF388E3C)) 
+                                     else if (isActive) listOf(Color(0xFF6366F1), Color(0xFF4338CA)) 
+                                     else listOf(Color.Gray, Color.DarkGray)
                         )
                     )
                     .clickable(enabled = isActive) { onBuzz() }
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "READY TO TAP",
-                        color = Color.White.copy(alpha = 0.4f),
+                        if (isBuzzed) "BUZZ RECORDED" else "READY TO TAP",
+                        color = Color.White.copy(alpha = 0.8f),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 3.sp
+                        letterSpacing = 2.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "BUZZ!",
+                        if (isBuzzed) "WAIT!" else "BUZZ!",
                         color = Color.White,
                         fontSize = 48.sp,
                         fontWeight = FontWeight.Black,

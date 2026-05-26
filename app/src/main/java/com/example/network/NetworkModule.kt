@@ -14,6 +14,7 @@ object NetworkModule {
     private const val BASE_URL = "https://gigueule-buzz.vercel.app/"
 
     private val moshi = Moshi.Builder()
+        .add(ParticipantAdapter())
         .add(KotlinJsonAdapterFactory())
         .build()
 

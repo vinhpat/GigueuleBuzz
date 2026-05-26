@@ -20,8 +20,10 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CreateSessionScreen(
     onCreateSubmit: (String, String, Int) -> Unit,
+    onResumeSubmit: (String) -> Unit,
     onBack: () -> Unit
 ) {
+    var resumeSessionId by remember { mutableStateOf("") }
     var sessionName by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var maxParticipants by remember { mutableStateOf("10") }
@@ -44,10 +46,33 @@ fun CreateSessionScreen(
             Text("IQ", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Create Session", fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color(0xFF0F172A))
-        Text("Setup your PaddyBuzz session", fontSize = 14.sp, color = Color(0xFF64748B))
+        Text("Create / Resume Session", fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color(0xFF0F172A))
+        Text("Host a new session or resume an existing one", fontSize = 14.sp, color = Color(0xFF64748B), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 
         Spacer(modifier = Modifier.height(32.dp))
+        
+        OutlinedTextField(
+            value = resumeSessionId,
+            onValueChange = { resumeSessionId = it.uppercase() },
+            label = { Text("Resume Session ID (Optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                disabledContainerColor = Color.White,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = Color(0xFFCBD5E1),
+                focusedLabelColor = MaterialTheme.colorScheme.primary
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text("OR CREATE NEW", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8))
+        
+        Spacer(modifier = Modifier.height(24.dp))
         
         OutlinedTextField(
             value = sessionName,
@@ -55,6 +80,7 @@ fun CreateSessionScreen(
             label = { Text("Session Name") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            enabled = resumeSessionId.isBlank(),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
@@ -73,6 +99,7 @@ fun CreateSessionScreen(
             label = { Text("Quick Description") },
             modifier = Modifier.fillMaxWidth(),
             maxLines = 3,
+            enabled = resumeSessionId.isBlank(),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
@@ -92,6 +119,7 @@ fun CreateSessionScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            enabled = resumeSessionId.isBlank(),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
@@ -105,15 +133,21 @@ fun CreateSessionScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
         
+        val isResuming = resumeSessionId.isNotBlank()
+        
         Button(
             onClick = { 
-                onCreateSubmit(sessionName, description, maxParticipants.toIntOrNull() ?: 10) 
+                if (isResuming) {
+                    onResumeSubmit(resumeSessionId)
+                } else {
+                    onCreateSubmit(sessionName, description, maxParticipants.toIntOrNull() ?: 10) 
+                }
             },
             modifier = Modifier.fillMaxWidth().height(64.dp),
-            enabled = sessionName.isNotBlank(),
+            enabled = isResuming || sessionName.isNotBlank(),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("START SESSION", fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Text(if (isResuming) "RESUME SESSION" else "START SESSION", fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         }
         Spacer(modifier = Modifier.height(16.dp))
         TextButton(onClick = onBack) {

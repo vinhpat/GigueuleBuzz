@@ -6,14 +6,20 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 // DTOs
+data class ParticipantDto(
+    val userName: String,
+    val buzzTime: Long? = null
+)
+
 data class SessionDto(
     val sessionId: String,
     val sessionName: String? = null,
     val description: String? = null,
     val maxParticipants: Int? = null,
-    val status: String, // "waiting", "active", "finished"
-    val winner: String?,
-    val participants: List<String>
+    val status: String, // "waiting", "active", "stopped"
+    val questionCounter: Int = 1,
+    val startTime: Long? = null,
+    val participants: List<ParticipantDto>
 )
 
 data class CreateSessionRequest(
@@ -45,6 +51,12 @@ interface BuzzerApiService {
 
     @POST("api/session/start")
     suspend fun startSession(@Body request: GenericSessionRequest): SessionDto
+
+    @POST("api/session/stop")
+    suspend fun stopSession(@Body request: GenericSessionRequest): SessionDto
+
+    @POST("api/session/next-question")
+    suspend fun nextQuestion(@Body request: GenericSessionRequest): SessionDto
 
     @POST("api/session/buzz")
     suspend fun buzz(@Body request: BuzzRequest): SessionDto

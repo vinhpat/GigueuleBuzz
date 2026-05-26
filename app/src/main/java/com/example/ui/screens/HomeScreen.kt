@@ -78,7 +78,7 @@ fun HomeScreen(
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text("CREATE SESSION", fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Text("CREATE / RESUME SESSION", fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         }
         
         Spacer(modifier = Modifier.height(24.dp))

@@ -27,7 +27,8 @@ app.post('/api/session/create', (req, res) => {
         description: description || '',
         maxParticipants: maxParticipants || 100,
         status: 'waiting',
-        winner: null,
+        questionCounter: 1,
+        startTime: null,
         participants: []
     };
     res.json(sessions[id]);
@@ -41,8 +42,8 @@ app.post('/api/session/join', (req, res) => {
         return res.status(404).json({ error: 'Session not found' });
     }
     
-    if (!session.participants.includes(userName)) {
-        session.participants.push(userName);
+    if (!session.participants.find(p => p.userName === userName)) {
+        session.participants.push({ userName, buzzTime: null });
     }
     
     res.json(session);
@@ -54,7 +55,35 @@ app.post('/api/session/start', (req, res) => {
     
     if (session) {
         session.status = 'active';
-        session.winner = null;
+        session.startTime = Date.now();
+        session.participants.forEach(p => p.buzzTime = null);
+        res.json(session);
+    } else {
+        res.status(404).json({ error: 'Session not found' });
+    }
+});
+
+app.post('/api/session/stop', (req, res) => {
+    const { sessionId } = req.body;
+    const session = sessions[sessionId];
+    
+    if (session) {
+        session.status = 'stopped';
+        res.json(session);
+    } else {
+        res.status(404).json({ error: 'Session not found' });
+    }
+});
+
+app.post('/api/session/next-question', (req, res) => {
+    const { sessionId } = req.body;
+    const session = sessions[sessionId];
+    
+    if (session) {
+        session.questionCounter = (session.questionCounter || 1) + 1;
+        session.status = 'waiting';
+        session.startTime = null;
+        session.participants.forEach(p => p.buzzTime = null);
         res.json(session);
     } else {
         res.status(404).json({ error: 'Session not found' });
@@ -70,8 +99,10 @@ app.post('/api/session/buzz', (req, res) => {
     }
     
     if (session.status === 'active') {
-        session.status = 'finished';
-        session.winner = userName;
+        const participant = session.participants.find(p => p.userName === userName);
+        if (participant && !participant.buzzTime) {
+            participant.buzzTime = Date.now();
+        }
     }
     
     res.json(session);
@@ -83,7 +114,8 @@ app.post('/api/session/reset', (req, res) => {
     
     if (session) {
         session.status = 'waiting';
-        session.winner = null;
+        session.startTime = null;
+        session.participants.forEach(p => p.buzzTime = null);
         res.json(session);
     } else {
         res.status(404).json({ error: 'Session not found' });

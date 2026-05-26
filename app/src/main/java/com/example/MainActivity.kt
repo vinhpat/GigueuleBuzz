@@ -100,6 +100,12 @@ fun BuzzerApp(viewModel: BuzzerViewModel) {
                             popUpTo(HomeRoute)
                         }
                     },
+                    onResumeSubmit = { resumeId ->
+                        viewModel.resumeSessionHost(resumeId)
+                        navController.navigate(SessionRoute) {
+                            popUpTo(HomeRoute)
+                        }
+                    },
                     onBack = { navController.popBackStack() }
                 )
             }
@@ -118,7 +124,9 @@ fun BuzzerApp(viewModel: BuzzerViewModel) {
                 SessionScreen(
                     uiState = uiState,
                     onStartQuiz = { viewModel.startQuiz() },
+                    onStopQuiz = { viewModel.stopQuiz() },
                     onResetQuiz = { viewModel.resetQuiz() },
+                    onNextQuestion = { viewModel.nextQuestion() },
                     onBuzz = { viewModel.buzz() },
                     onLeave = {
                         viewModel.clearError()

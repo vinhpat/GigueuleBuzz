@@ -56,6 +56,38 @@ class BuzzerViewModel(
         }
     }
 
+    fun resumeSessionHost(sessionId: String) {
+        if (sessionId.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Session ID cannot be empty") }
+            return
+        }
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        viewModelScope.launch {
+            repository.getSession(sessionId.uppercase()).onSuccess { session ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        session = session,
+                        isMaster = true,
+                        userName = "Master"
+                    )
+                }
+                startPolling(session.sessionId)
+            }.onFailure { error ->
+                val getErrorMessage = if (error is retrofit2.HttpException && error.code() == 404) {
+                    "Session not found."
+                } else if (error is retrofit2.HttpException && error.code() == 401) {
+                    "API Access Denied (HTTP 401). If using Vercel, please disable 'Vercel Authentication' for preview deployments."
+                } else if (error is java.net.UnknownHostException || error is java.net.ConnectException || error is java.net.SocketTimeoutException) {
+                    "Unable to connect to the server."
+                } else {
+                    error.message ?: "An unknown error occurred"
+                }
+                _uiState.update { it.copy(isLoading = false, errorMessage = getErrorMessage) }
+            }
+        }
+    }
+    
     fun joinSession(sessionId: String, userName: String) {
         if (sessionId.isBlank() || userName.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Session ID and Name cannot be empty") }
@@ -112,6 +144,24 @@ class BuzzerViewModel(
         val sessionId = _uiState.value.session?.sessionId ?: return
         viewModelScope.launch {
             repository.startSession(sessionId).onFailure { error ->
+                _uiState.update { it.copy(errorMessage = error.message) }
+            }
+        }
+    }
+
+    fun stopQuiz() {
+        val sessionId = _uiState.value.session?.sessionId ?: return
+        viewModelScope.launch {
+            repository.stopSession(sessionId).onFailure { error ->
+                _uiState.update { it.copy(errorMessage = error.message) }
+            }
+        }
+    }
+
+    fun nextQuestion() {
+        val sessionId = _uiState.value.session?.sessionId ?: return
+        viewModelScope.launch {
+            repository.nextQuestion(sessionId).onFailure { error ->
                 _uiState.update { it.copy(errorMessage = error.message) }
             }
         }

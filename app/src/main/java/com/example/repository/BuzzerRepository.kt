@@ -36,6 +36,22 @@ class BuzzerRepository(private val apiService: BuzzerApiService) {
         }
     }
 
+    suspend fun stopSession(sessionId: String): Result<SessionDto> {
+        return try {
+            Result.success(apiService.stopSession(GenericSessionRequest(sessionId)))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun nextQuestion(sessionId: String): Result<SessionDto> {
+        return try {
+            Result.success(apiService.nextQuestion(GenericSessionRequest(sessionId)))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun buzz(sessionId: String, userName: String): Result<SessionDto> {
         return try {
             Result.success(apiService.buzz(BuzzRequest(sessionId, userName)))
@@ -47,6 +63,14 @@ class BuzzerRepository(private val apiService: BuzzerApiService) {
     suspend fun resetSession(sessionId: String): Result<SessionDto> {
         return try {
             Result.success(apiService.resetSession(GenericSessionRequest(sessionId)))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getSession(sessionId: String): Result<SessionDto> {
+        return try {
+            Result.success(apiService.getSession(sessionId))
         } catch (e: Exception) {
             Result.failure(e)
         }
