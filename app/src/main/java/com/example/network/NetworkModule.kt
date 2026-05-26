@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 object NetworkModule {
     // Note: Change this to your actual Vercel deployment URL when ready.
     // For local testing on an Android emulator: http://10.0.2.2:3000/
-    private const val BASE_URL = "https://buzzer-api-demo.vercel.app/"
+    private const val BASE_URL = "https://gigueule-buzz-rboz0d0hk-paddys-projects-b775e71e.vercel.app/"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())

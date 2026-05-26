@@ -5,6 +5,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req, res) => {
+    res.json({ status: "ok", message: "PaddyBuzz API is running", version: "1.0.0" });
+});
+
 // In-memory store for a simple Proof of Concept.
 // For production, replace this with a database (e.g., Redis, MongoDB).
 const sessions = {};
