@@ -1,0 +1,6 @@
+{
+  "name": "PaddyBuzz",
+  "description": "A real-time Buzzer application for meeting icebreakers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
