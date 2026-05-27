@@ -9,6 +9,8 @@ import com.example.network.SessionDto
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 class BuzzerRepository(private val apiService: BuzzerApiService) {
 
@@ -80,12 +82,18 @@ class BuzzerRepository(private val apiService: BuzzerApiService) {
     fun pollSession(sessionId: String, intervalMs: Long = 1000L): Flow<Result<SessionDto>> = flow {
         while (true) {
             try {
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
                 val session = apiService.getSession(sessionId)
                 emit(Result.success(session))
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 emit(Result.failure(e))
             }
-            delay(intervalMs)
+            try {
+                delay(intervalMs)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            }
         }
     }
 }

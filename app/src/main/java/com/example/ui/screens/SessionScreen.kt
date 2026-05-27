@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
 
+import androidx.activity.compose.BackHandler
+
 @Composable
 fun SessionScreen(
     uiState: BuzzerUiState,
@@ -35,6 +37,10 @@ fun SessionScreen(
     onNextQuestion: () -> Unit,
     onLeave: () -> Unit
 ) {
+    BackHandler {
+        onLeave()
+    }
+    
     val session = uiState.session
 
     if (session == null) {
@@ -42,36 +48,113 @@ fun SessionScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(Color(0xFF0F172A))
                     .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        "🤔",
-                        fontSize = 80.sp
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        "You got Lost!",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color(0xFF0F172A)
+                        "⚠️ SYSTEM DIAGNOSTIC REPORT",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFEF4444),
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        letterSpacing = 1.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        uiState.errorMessage ?: "Something went wrong.",
-                        fontSize = 16.sp,
-                        color = Color(0xFF64748B),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(48.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "SIGNAL STREAM STATUS \\\\ TERMINATED",
+                                fontSize = 11.sp,
+                                color = Color(0xFF94A3B8),
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            val isMasterRole = if (uiState.isMaster) "HOST / MASTER" else "PARTICIPANT / CLIENT"
+                            val currentUserId = uiState.userName ?: "NULL_USER"
+                            
+                            Text(
+                                "• ACTIVE NODE: $currentUserId ($isMasterRole)",
+                                fontSize = 13.sp,
+                                color = Color(0xFF38BDF8),
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "• INTERRUPT REPORT:",
+                                fontSize = 13.sp,
+                                color = Color(0xFFF1F5F9),
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFF0F172A), RoundedCornerShape(6.dp))
+                                    .padding(12.dp)
+                            ) {
+                                Text(
+                                    text = uiState.errorMessage ?: "CRITICAL DISCORDANCE IN STATE SYNC",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFFF87171),
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Text(
+                                "RESOLUTION ALGORITHMS:",
+                                fontSize = 12.sp,
+                                color = Color(0xFFF59E0B),
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                "1. RECYCLE SESSION: Backend servers destroy idle sockets to conserve heap memory. Initiate a NEW quiz block as host.\n" +
+                                "2. CONNECTION OUTAGE: Verified routes failed or the database purged session context. Validate network interface.",
+                                fontSize = 11.sp,
+                                color = Color(0xFFCBD5E1),
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
                     Button(
                         onClick = onLeave,
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("GO BACK", fontWeight = FontWeight.Bold)
+                        Text(
+                            "RECONNECT / LEAVE", 
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            letterSpacing = 1.sp
+                        )
                     }
                 }
             }
@@ -248,28 +331,7 @@ fun MasterDashboard(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                var elapsedMs by remember { mutableStateOf(0L) }
-                LaunchedEffect(status, startTime) {
-                    if (status == "active" && startTime != null) {
-                        while (true) {
-                            elapsedMs = System.currentTimeMillis() - startTime
-                            delay(50)
-                        }
-                    } else if (status == "waiting") {
-                        elapsedMs = 0L
-                    }
-                }
-                
-                if (status == "active" || (status == "stopped" && elapsedMs > 0)) {
-                    val seconds = (elapsedMs / 1000).toInt()
-                    val millis = ((elapsedMs % 1000) / 10).toInt()
-                    Text(
-                        String.format(java.util.Locale.US, "%02d:%02d", seconds, millis),
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color(0xFF334155)
-                    )
-                }
+                ActiveTimerText(status, startTime)
             }
         }
 
@@ -319,12 +381,14 @@ fun MasterDashboard(
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(p.userName, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155), modifier = Modifier.weight(1f))
                         
-                        if (status == "stopped" && p.buzzTime != null && startTime != null) {
+                        if (p.buzzTime != null && startTime != null) {
                             val buzzElapsed = p.buzzTime - startTime
-                            val bSec = (buzzElapsed / 1000).toInt()
-                            val bMillis = ((buzzElapsed % 1000) / 10).toInt()
+                            val absoluteElapsed = kotlin.math.abs(buzzElapsed)
+                            val bSec = (absoluteElapsed / 1000).toInt()
+                            val bMillis = ((absoluteElapsed % 1000) / 10).toInt()
+                            val sign = if (buzzElapsed < 0) "-" else "+"
                             Text(
-                                String.format(java.util.Locale.US, "+%02d:%02d", bSec, bMillis),
+                                String.format(java.util.Locale.US, "%s%02d:%02d", sign, bSec, bMillis),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF4CAF50)
@@ -464,7 +528,7 @@ fun ParticipantBuzzer(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        if (status == "active") "SESSION ACTIVE" else "WAITING FOR HOST",
+                        if (status == "active") "ROUND $currentRound ACTIVE" else "WAITING FOR HOST",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF312E81),
@@ -557,5 +621,31 @@ fun ParticipantBuzzer(
                 Text(userName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
             }
         }
+    }
+}
+
+@Composable
+fun ActiveTimerText(status: String, startTime: Long?) {
+    var elapsedMs by remember { mutableStateOf(0L) }
+    LaunchedEffect(status, startTime) {
+        if (status == "active" && startTime != null) {
+            while (true) {
+                elapsedMs = System.currentTimeMillis() - startTime
+                delay(100)
+            }
+        } else if (status == "waiting") {
+            elapsedMs = 0L
+        }
+    }
+    
+    if (status == "active" || (status == "stopped" && elapsedMs > 0)) {
+        val seconds = (elapsedMs / 1000).toInt()
+        val millis = ((elapsedMs % 1000) / 10).toInt()
+        Text(
+            String.format(java.util.Locale.US, "%02d:%02d", seconds, millis),
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Black,
+            color = Color(0xFF334155)
+        )
     }
 }

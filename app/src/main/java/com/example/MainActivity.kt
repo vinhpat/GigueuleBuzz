@@ -129,7 +129,7 @@ fun BuzzerApp(viewModel: BuzzerViewModel) {
                     onNextQuestion = { viewModel.nextQuestion() },
                     onBuzz = { viewModel.buzz() },
                     onLeave = {
-                        viewModel.clearError()
+                        viewModel.leaveSession()
                         navController.popBackStack()
                     }
                 )
