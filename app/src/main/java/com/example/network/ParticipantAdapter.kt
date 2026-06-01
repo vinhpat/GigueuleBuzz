@@ -22,7 +22,15 @@ class ParticipantAdapter {
                     if (reader.peek() == JsonReader.Token.NULL) {
                         reader.nextNull<Unit>()
                     } else {
-                        buzzTime = reader.nextLong()
+                        buzzTime = try {
+                            reader.nextLong()
+                        } catch (e: Exception) {
+                            try {
+                                reader.nextDouble().toLong()
+                            } catch (e2: Exception) {
+                                reader.nextString().toDouble().toLong()
+                            }
+                        }
                     }
                 } else {
                     reader.skipValue()
