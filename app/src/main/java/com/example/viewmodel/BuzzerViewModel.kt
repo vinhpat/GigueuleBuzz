@@ -127,26 +127,17 @@ class BuzzerViewModel(
                 result.onSuccess { session ->
                     _uiState.update { it.copy(session = session, errorMessage = null) }
                 }.onFailure { error ->
-                    val errorDetails = if (error is retrofit2.HttpException) {
-                        try {
-                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                error.response()?.errorBody()?.string() ?: "No error body"
-                            }
-                        } catch (e: Exception) {
-                            "Could not read error body"
-                        }
-                    } else {
-                        "Not an HTTP exception"
-                    }
-                    android.util.Log.e("BuzzerViewModel", "Polling failed for sessionId=$sessionId. Error: ${error.message}. Details: $errorDetails", error)
+                    val errorCode = (error as? retrofit2.HttpException)?.code()
+                    val errorMessage = error.message ?: "Unknown polling error"
+                    android.util.Log.e("BuzzerViewModel", "Polling failed for sessionId=$sessionId. Code: $errorCode. Msg: $errorMessage", error)
                     
                     if (error is retrofit2.HttpException && error.code() == 404) {
-                        _uiState.update { it.copy(session = null, errorMessage = "Session '$sessionId' was ended or no longer exists. Server responded 404: $errorDetails") }
+                        _uiState.update { it.copy(session = null, errorMessage = "Session '$sessionId' has ended or no longer exists.") }
                         pollJob?.cancel()
                     } else if (error is java.net.UnknownHostException || error is java.net.ConnectException || error is java.net.SocketTimeoutException) {
-                        _uiState.update { it.copy(errorMessage = "Connection issues... retrying context.") }
+                        _uiState.update { it.copy(errorMessage = "Connection issues... retrying.") }
                     } else {
-                        _uiState.update { it.copy(errorMessage = "Connection error. Session '$sessionId'. " + (error.message ?: "")) }
+                        _uiState.update { it.copy(errorMessage = "Connection error for '$sessionId': $errorMessage") }
                     }
                 }
             }
