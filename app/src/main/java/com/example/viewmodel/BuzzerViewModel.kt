@@ -129,7 +129,9 @@ class BuzzerViewModel(
                 }.onFailure { error ->
                     val errorDetails = if (error is retrofit2.HttpException) {
                         try {
-                            error.response()?.errorBody()?.string() ?: "No error body"
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                error.response()?.errorBody()?.string() ?: "No error body"
+                            }
                         } catch (e: Exception) {
                             "Could not read error body"
                         }

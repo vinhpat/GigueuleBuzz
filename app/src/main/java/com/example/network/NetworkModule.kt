@@ -1,5 +1,6 @@
 package com.example.network
 
+import com.example.BuildConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
@@ -11,7 +12,16 @@ import java.util.concurrent.TimeUnit
 object NetworkModule {
     // Note: Change this to your actual Vercel deployment URL when ready.
     // For local testing on an Android emulator: http://10.0.2.2:3000/
-    private const val BASE_URL = "https://gigueule-buzz.vercel.app/"
+    private val BASE_URL: String = try {
+        val url = BuildConfig.BASE_URL
+        if (url.isNullOrBlank() || url == "BASE_URL") {
+            "https://gigueule-buzz.vercel.app/"
+        } else {
+            url
+        }
+    } catch (e: Throwable) {
+        "https://gigueule-buzz.vercel.app/"
+    }
 
     private val moshi = Moshi.Builder()
         .add(ParticipantAdapter())
