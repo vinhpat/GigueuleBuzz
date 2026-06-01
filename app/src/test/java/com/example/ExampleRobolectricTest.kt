@@ -87,5 +87,37 @@ class ExampleRobolectricTest {
       }
       composeTestRule.onRoot().assertExists()
   }
+
+  @Test
+  fun testMoshiJsonParsingSafety() {
+      val moshi = com.squareup.moshi.Moshi.Builder()
+          .add(com.example.network.ParticipantAdapter())
+          .add(com.example.network.SafeLongAdapter)
+          .add(com.example.network.SafeIntAdapter)
+          .add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
+          .build()
+
+      val json = """
+          {
+              "sessionId": "TEST1",
+              "sessionName": "Diagnostic Test",
+              "status": "waiting",
+              "questionCounter": 1,
+              "participants": [
+                  {"userName": "Alice", "buzzTime": null},
+                  {"userName": "Bob", "buzzTime": 1717257917719}
+              ],
+              "roundHistory": []
+          }
+      """.trimIndent()
+
+      val adapter = moshi.adapter(com.example.network.SessionDto::class.java)
+      val session = adapter.fromJson(json)
+      org.junit.Assert.assertNotNull(session)
+      assertEquals("TEST1", session?.sessionId)
+      assertEquals("Alice", session?.participants?.get(0)?.userName)
+      assertEquals(null, session?.participants?.get(0)?.buzzTime)
+      assertEquals(1717257917719L, session?.participants?.get(1)?.buzzTime)
+  }
 }
 

@@ -20,7 +20,7 @@ class ParticipantAdapter {
                     userName = reader.nextString()
                 } else if (name == "buzzTime") {
                     if (reader.peek() == JsonReader.Token.NULL) {
-                        reader.nextNull<Unit>()
+                        reader.nextNull<Nothing?>()
                     } else {
                         buzzTime = try {
                             reader.nextLong()

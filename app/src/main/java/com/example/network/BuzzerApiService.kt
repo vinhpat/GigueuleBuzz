@@ -24,8 +24,8 @@ data class SessionDto(
     val status: String, // "waiting", "active", "stopped"
     val questionCounter: Int = 1,
     val startTime: Long? = null,
-    val participants: List<ParticipantDto>,
-    val roundHistory: List<RoundHistoryDto> = emptyList()
+    val participants: List<ParticipantDto>? = emptyList(),
+    val roundHistory: List<RoundHistoryDto>? = emptyList()
 )
 
 data class CreateSessionRequest(

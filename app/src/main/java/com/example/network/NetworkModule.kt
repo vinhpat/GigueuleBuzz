@@ -17,7 +17,7 @@ object SafeLongAdapter {
     @FromJson
     fun fromJson(reader: JsonReader): Long? {
         if (reader.peek() == JsonReader.Token.NULL) {
-            reader.nextNull<Unit>()
+            reader.nextNull<Nothing?>()
             return null
         }
         return try {
@@ -49,7 +49,7 @@ object SafeIntAdapter {
     @FromJson
     fun fromJson(reader: JsonReader): Int? {
         if (reader.peek() == JsonReader.Token.NULL) {
-            reader.nextNull<Unit>()
+            reader.nextNull<Nothing?>()
             return null
         }
         return try {
