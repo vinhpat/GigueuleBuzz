@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaddyBuzz! 🎮 Play Cozily in your Browser</title>
+    <!-- Tailwind CSS for utility grids -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Space+Grotesk:wght@700&display=swap');
+        
+        :root {
+            --cute-cocoa: #2C1A11;
+            --cute-cream: #FFFDF4;
+            --cute-white: #FFFFFF;
+            --cute-yellow: #FFD633;
+            --cute-pink: #FF6694;
+            --cute-blue: #4CC9F0;
+            --cute-green: #6EDC14;
+            --cute-red: #FF4757;
+            --cute-orange: #FF9E1B;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--cute-cream);
+            color: var(--cute-cocoa);
+            overflow-x: hidden;
+        }
+
+        .heading {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* 3D Flat Cartoon Borders & Shadows */
+        .cartoon-card {
+            background-color: var(--cute-white);
+            border: 4px solid var(--cute-cocoa);
+            border-radius: 24px;
+            box-shadow: 8px 8px 0px var(--cute-cocoa);
+            transition: all 0.2s ease;
+        }
+
+        .cartoon-input {
+            border: 3px solid var(--cute-cocoa);
+            border-radius: 16px;
+            font-weight: 800;
+            color: var(--cute-cocoa);
+            transition: all 0.2s ease;
+        }
+        .cartoon-input:focus {
+            outline: none;
+            box-shadow: 4px 4px 0px var(--cute-cocoa);
+            background-color: var(--cute-white);
+        }
+
+        /* Tactile Cartoon Buttons */
+        .cartoon-btn {
+            border: 3px solid var(--cute-cocoa);
+            border-radius: 20px;
+            font-weight: 800;
+            box-shadow: 6px 6px 0px var(--cute-cocoa);
+            transform: translate(0px, 0px);
+            transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .cartoon-btn:hover:not(:disabled) {
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0px var(--cute-cocoa);
+        }
+        .cartoon-btn:active:not(:disabled) {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px var(--cute-cocoa);
+        }
+        .cartoon-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Dynamic Continuous Floating & Wiggling */
+        @keyframes gentleFloat {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .gentle-float {
+            animation: gentleFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes wiggle {
+            0% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+            100% { transform: rotate(-3deg); }
+        }
+        .wiggle {
+            animation: wiggle 2s ease-in-out infinite;
+        }
+
+        /* Spring Rubber Band Pulse for Buzzer Click */
+        @keyframes rubberBand {
+            from { transform: scale3d(1, 1, 1); }
+            30% { transform: scale3d(1.12, 0.88, 1); }
+            40% { transform: scale3d(0.9, 1.1, 1); }
+            50% { transform: scale3d(1.08, 0.92, 1); }
+            65% { transform: scale3d(0.96, 1.04, 1); }
+            75% { transform: scale3d(1.02, 0.98, 1); }
+            to { transform: scale3d(1, 1, 1); }
+        }
+        .animate-bouncy {
+            animation: rubberBand 0.5s both;
+        }
+
+        /* Giant Dome Buzzer Button Spec */
+        .buzzer-dome {
+            border: 6px solid var(--cute-cocoa);
+            box-shadow: 10px 10px 0px var(--cute-cocoa);
+            transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .buzzer-dome.active:not(:disabled):hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 12px 12px 0px var(--cute-cocoa);
+        }
+        .buzzer-dome.active:not(:disabled):active {
+            transform: translate(8px, 8px);
+            box-shadow: 0px 0px 0px var(--cute-cocoa);
+        }
+        .buzzer-dome:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        /* Pulse glow for ready-to-buzz */
+        @keyframes pulseGlow {
+            0% { box-shadow: 10px 10px 0px var(--cute-cocoa), 0 0 0 0px rgba(255,102,148,0.4); }
+            100% { box-shadow: 10px 10px 0px var(--cute-cocoa), 0 0 0 20px rgba(255,102,148,0); }
+        }
+        .pulse-active {
+            animation: pulseGlow 1.2s infinite;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- TOP HEADER -->
+    <header class="w-full max-w-lg mx-auto px-6 pt-6 flex justify-between items-center">
+        <!-- Brand Signature -->
+        <div class="flex items-center space-x-2">
+            <div class="w-10 h-10 border-3 border-[#2C1A11] bg-[#FFD633] rounded-full flex items-center justify-center font-bold text-xl wiggle">👑</div>
+            <span class="heading font-black text-2xl tracking-tight text-[#2C1A11]">PaddyBuzz!</span>
+        </div>
+        <div id="connection-status" class="hidden text-xs font-extrabold text-[#6EDC14] bg-white border-2 border-[#2C1A11] px-3 py-1 rounded-full shadow-[2px_2px_0px_rgba(44,26,17,1)]">
+            ● CONNECTED COZILY
+        </div>
+    </header>
+
+    <!-- CONTENT DISPLAY CONTAINER -->
+    <main class="flex-grow flex flex-col justify-center items-center px-4 py-8">
+        
+        <!-- ================= LOBBY / JOIN VIEW ================= -->
+        <div id="join-view" class="w-full max-w-sm cartoon-card p-6 flex flex-col items-center">
+            
+            <!-- Logo Mascot Card -->
+            <div class="w-16 h-16 bg-[#FF6694] rounded-2xl border-3 border-[#2C1A11] shadow-[4px_4px_0px_rgba(44,26,17,1)] flex items-center justify-center text-3xl gentle-float mb-4">
+                🎮
+            </div>
+            
+            <h1 class="heading font-black text-3xl text-center text-[#2C1A11] mb-2">Join the Board!</h1>
+            <p class="text-sm font-bold text-black/50 text-center mb-6">Enter the Code displayed on your screen to play cozy!</p>
+            
+            <!-- Error Alert -->
+            <div id="join-error" class="hidden w-full bg-[#FF4757]/10 border-2 border-[#FF4757] text-[#FF4757] text-xs font-black p-3 rounded-xl mb-4 text-center">
+                Session not found! Check your spelling.
+            </div>
+
+            <!-- Form -->
+            <form id="join-form" class="w-full space-y-4">
+                <!-- Session Code -->
+                <div>
+                    <label class="block text-xs font-black tracking-wider text-[#2C1A11] mb-1.5 uppercase">Session Code (4 Letters)</label>
+                    <input type="text" id="join-code" placeholder="e.g. PQ88" maxlength="4" required
+                           class="w-full p-3 bg-white cartoon-input focus:ring-0 uppercase placeholder-[#2C1A11]/30">
+                </div>
+
+                <!-- Nickname -->
+                <div>
+                    <label class="block text-xs font-black tracking-wider text-[#2C1A11] mb-1.5 uppercase">Your Goofy Nickname</label>
+                    <input type="text" id="join-name" placeholder="e.g. Butterscotch" required
+                           class="w-full p-3 bg-white cartoon-input focus:ring-0 placeholder-[#2C1A11]/30">
+                </div>
+
+                <!-- Action button -->
+                <button type="submit" id="join-submit-btn" class="w-full py-4 bg-[#FF6694] text-white cartoon-btn text-base flex justify-center items-center gap-2">
+                    🚀 CONNECT TO GAME!
+                </button>
+            </form>
+        </div>
+
+        <!-- ================= PLAYER BUZZER VIEW ================= -->
+        <div id="buzzer-view" class="hidden w-full max-w-sm flex flex-col items-center gap-6">
+            
+            <!-- Header Card with Details -->
+            <div class="w-full cartoon-card p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 border-2 border-[#2C1A11] rounded-full bg-[#FF6694] flex items-center justify-center text-lg">🎮</div>
+                    <div>
+                        <h2 id="room-name" class="font-extrabold text-[#2C1A11] text-sm truncate max-w-[150px]">Room name</h2>
+                        <p id="room-round" class="text-xs font-extrabold text-[#2C1A11]/50">ROUND 1</p>
+                    </div>
+                </div>
+                <button onclick="leaveSession()" class="text-xs font-extrabold text-[#FF4757] hover:underline bg-[#FF4757]/10 px-3 py-1.5 border border-[#FF4757]/20 rounded-lg">
+                    🎈 LEAVE
+                </button>
+            </div>
+
+            <!-- Status Indicator Alert -->
+            <div id="status-card" class="w-full border-2.5 border-[#2C1A11] rounded-2xl bg-white p-3 text-center transition-all">
+                <div class="flex items-center justify-center space-x-2">
+                    <span id="status-dot" class="w-3 h-3 rounded-full border border-[#2C1A11] bg-yellow-400"></span>
+                    <span id="status-text" class="text-xs font-black text-[#2C1A11]">WAIT FOR BUZZERS TO OPEN...</span>
+                </div>
+            </div>
+
+            <!-- Mascot Circle / Dome Wrapper -->
+            <div class="relative w-72 h-72 flex justify-center items-center">
+                <!-- Visual Background Orbits -->
+                <div class="absolute w-72 h-72 border-2 border-[#2C1A11]/5 rounded-full"></div>
+                <div class="absolute w-64 h-64 border-3 border-[#2C1A11]/10 rounded-full"></div>
+
+                <!-- Giant interactive dome button -->
+                <button id="giant-buzzer" disabled onclick="buzzIn()"
+                        class="absolute w-56 h-56 rounded-full bg-[#2C1A11]/15 buzzer-dome transition-all duration-100 flex items-center justify-center">
+                    <div class="flex flex-col items-center">
+                        <span id="buzzer-label" class="text-xs font-black tracking-wider text-[#2C1A11]/50 mb-1">WAITING</span>
+                        <span id="buzzer-icon" class="text-3xl font-black">💤</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- User Info Badge ID -->
+            <div class="w-full cartoon-card p-4 flex items-center space-x-3.5">
+                <div class="w-10 h-10 border-2 border-[#2C1A11] rounded-full bg-[#FFD633] flex items-center justify-center text-lg">👋</div>
+                <div>
+                    <h3 class="text-[10px] font-black text-[#2C1A11]/50 tracking-wider">PLAYING IN GAME AS</h3>
+                    <p id="player-nickname" class="font-extrabold text-[#2C1A11] text-base">Butterfly</p>
+                </div>
+            </div>
+
+            <!-- Collapsible joined players list -->
+            <div class="w-full cartoon-card p-4 flex flex-col gap-3">
+                <div class="flex justify-between items-center pb-2 border-b-2 border-[#2C1A11]/10">
+                    <span class="text-xs font-black uppercase text-[#2C1A11]">👥 Players Joined (<span id="player-count">0</span>)</span>
+                    <span class="text-[10px] font-black uppercase px-2 py-0.5 border border-[#2C1A11]/25 rounded bg-[#FFFDF4]">Live</span>
+                </div>
+                <div id="players-list" class="flex flex-col gap-2 max-h-36 overflow-y-auto">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+            
+            <!-- Round History index -->
+            <div id="history-box" class="w-full hidden bg-white border-2 border-[#2C1A11] rounded-xl p-3">
+                <h4 class="text-[10px] font-black uppercase text-[#2C1A11]/50 mb-2">🏆 Win Records</h4>
+                <div id="history-list" class="flex flex-col gap-1 text-xs font-bold text-[#2C1A11]"></div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="text-center py-6 text-xs font-bold text-black/40">
+        🎈 TASTY COZY CLOUD SYSTEM © 2026
+    </footer>
+
+    <!-- INTERACTION LOGIC & WEB AUDIO SYNTH -->
+    <script>
+        let sessionId = "";
+        let userName = "";
+        let pollingInterval = null;
+        let lastKnownStatus = "";
+        
+        // Load session from local storage on load if present
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedSession = localStorage.getItem('paddybuzz_session_id');
+            const savedUser = localStorage.getItem('paddybuzz_username');
+            if (savedSession && savedUser) {
+                sessionId = savedSession;
+                userName = savedUser;
+                showBuzzerView();
+            }
+        });
+
+        // HTML5 Audio synthesizer play retro beep-bops with Web Audio API (No files needed!)
+        const AudioSynth = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playPop() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(700, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.15);
+            },
+            playBuzz() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.exponentialRampToValueAtTime(105, now + 0.35);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.35);
+            },
+            playReady() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5 Node
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5 Node
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.25);
+            }
+        };
+
+        // Form Submit
+        document.getElementById('join-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('join-submit-btn');
+            const err = document.getElementById('join-error');
+            
+            const enteredCode = document.getElementById('join-code').value.trim().toUpperCase();
+            const enteredName = document.getElementById('join-name').value.trim();
+            
+            if (!enteredCode || !enteredName) return;
+
+            btn.disabled = true;
+            btn.innerHTML = "🌀 CONNECTING...";
+            err.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/session/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: enteredCode, userName: enteredName })
+                });
+
+                if (response.ok) {
+                    sessionId = enteredCode;
+                    userName = enteredName;
+                    
+                    // Persist session to local storage
+                    localStorage.setItem('paddybuzz_session_id', sessionId);
+                    localStorage.setItem('paddybuzz_username', userName);
+
+                    AudioSynth.playPop();
+                    showBuzzerView();
+                } else {
+                    const data = await response.json();
+                    err.textContent = data.error || "Room doesn't exist, check spelling!";
+                    err.classList.remove('hidden');
+                }
+            } catch (e) {
+                err.textContent = "Network error connecting to game server!";
+                err.classList.remove('hidden');
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "🚀 CONNECT TO GAME!";
+            }
+        });
+
+        function showBuzzerView() {
+            document.getElementById('join-view').classList.add('hidden');
+            document.getElementById('buzzer-view').classList.remove('hidden');
+            document.getElementById('connection-status').classList.remove('hidden');
+            document.getElementById('player-nickname').textContent = userName;
+            
+            // Trigger visual button wiggles
+            document.getElementById('buzzer-view').classList.add('animate-bouncy');
+            setTimeout(() => document.getElementById('buzzer-view').classList.remove('animate-bouncy'), 600);
+
+            // Start Polling Loop
+            pollSession();
+            pollingInterval = setInterval(pollSession, 800);
+        }
+
+        // Leave Session
+        function leaveSession() {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            sessionId = "";
+            userName = "";
+            lastKnownStatus = "";
+            
+            localStorage.removeItem('paddybuzz_session_id');
+            localStorage.removeItem('paddybuzz_username');
+            
+            document.getElementById('connection-status').classList.add('hidden');
+            document.getElementById('buzzer-view').classList.add('hidden');
+            document.getElementById('join-view').classList.remove('hidden');
+            document.getElementById('join-code').value = "";
+            document.getElementById('join-name').value = "";
+        }
+
+        // Fetch Room State
+        async function pollSession() {
+            if (!sessionId) return;
+            try {
+                const response = await fetch(`/api/session/${sessionId}`);
+                if (response.status === 404) {
+                    // Lobby naturally expired
+                    leaveSession();
+                    alert("Cozy sign-out: This active game room has expired or ended!");
+                    return;
+                }
+                const data = await response.json();
+                renderSessionState(data);
+            } catch (error) {
+                console.warn("Lobby sync ping error:", error);
+            }
+        }
+
+        // Render Session Elements
+        function renderSessionState(session) {
+            document.getElementById('room-name').textContent = session.sessionName || "PaddyBuzz Room";
+            document.getElementById('room-round').textContent = `ROUND ${session.questionCounter || 1}`;
+            
+            const currentParticipant = session.participants.find(p => p.userName === userName);
+            const myBuzzTime = currentParticipant ? currentParticipant.buzzTime : null;
+            const status = session.status; // 'waiting', 'active', 'stopped'
+            
+            const buzzerBtn = document.getElementById('giant-buzzer');
+            const buzzerLabel = document.getElementById('buzzer-label');
+            const buzzerIcon = document.getElementById('buzzer-icon');
+            const statusCard = document.getElementById('status-card');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+
+            // Play Alert Chime sound if round transition from locked/stopped -> active
+            if (status === 'active' && lastKnownStatus !== 'active' && !myBuzzTime) {
+                AudioSynth.playReady();
+                buzzerBtn.classList.add('animate-bouncy');
+                setTimeout(() => buzzerBtn.classList.remove('animate-bouncy'), 500);
+            }
+            lastKnownStatus = status;
+
+            // Render matching states precisely
+            if (myBuzzTime) {
+                // Already bleeped/buzzed!
+                buzzerBtn.disabled = true;
+                buzzerBtn.className = "absolute w-56 h-56 rounded-full bg-[#6EDC14] buzzer-dome transition-all duration-100 flex items-center justify-center";
+                buzzerLabel.textContent = "SMASHED!";
+                buzzerIcon.textContent = "😎";
+                
+                statusCard.style.backgroundColor = "rgba(110, 220, 20, 0.1)";
+                statusCard.style.borderColor = "var(--cute-cocoa)";
+                statusDot.className = "w-3 h-3 rounded-full border border-dark bg-[#6EDC14]";
+                statusText.textContent = "🎉 YOUR BUZZ RECORDED! ✅";
+            } else if (status === 'active') {
+                // Open and hot! ready to buzz
+                buzzerBtn.disabled = false;
+                buzzerBtn.className = "absolute w-56 h-56 rounded-full bg-[#FF6694] buzzer-dome active pulse-active transition-all duration-100 flex items-center justify-center";
+                buzzerLabel.textContent = "TAP!";
+                buzzerIcon.textContent = "🚨";
+                
+                statusCard.style.backgroundColor = "rgba(255, 102, 148, 0.1)";
+                statusCard.style.borderColor = "var(--cute-cocoa)";
+                statusDot.className = "w-3 h-3 rounded-full border border-dark bg-[#FF6694] animate-ping";
+                statusText.textContent = "TAP THE DOME BUTTON NOW! GO!";
+            } else if (status === 'stopped') {
+                // Game locked. Round closed
+                buzzerBtn.disabled = true;
+                buzzerBtn.className = "absolute w-56 h-56 rounded-full bg-[#FF4757]/10 buzzer-dome transition-all duration-100 flex items-center justify-center";
+                buzzerLabel.textContent = "LOCKED";
+                buzzerIcon.textContent = "🔒";
+                
+                statusCard.style.backgroundColor = "rgba(255, 71, 87, 0.1)";
+                statusCard.style.borderColor = "var(--cute-cocoa)";
+                statusDot.className = "w-3 h-3 rounded-full border border-dark bg-[#FF4757]";
+                statusText.textContent = "ROUND CLOSED FOR INSPECTION";
+            } else {
+                // Waiting next round
+                buzzerBtn.disabled = true;
+                buzzerBtn.className = "absolute w-56 h-56 rounded-full bg-[#2C1A11]/10 buzzer-dome transition-all duration-100 flex items-center justify-center";
+                buzzerLabel.textContent = "WAITING";
+                buzzerIcon.textContent = "💤";
+                
+                statusCard.style.backgroundColor = "var(--cute-white)";
+                statusCard.style.borderColor = "var(--cute-cocoa)";
+                statusDot.className = "w-3 h-3 rounded-full border border-dark bg-[#FFD633]";
+                statusText.textContent = "WAIT COZY... HOST TO OPEN BUZZERS!";
+            }
+
+            // Render joined players dynamic index list with accurate status colors
+            const pCount = document.getElementById('player-count');
+            const pList = document.getElementById('players-list');
+            pCount.textContent = session.participants.length;
+            pList.innerHTML = "";
+            
+            const colors = ["#FFD633", "#FF6694", "#4CC9F0", "#6EDC14", "#FF9E1B"];
+            
+            session.participants.forEach((p, idx) => {
+                const isBuzzed = p.buzzTime !== null;
+                const userInitial = p.userName ? p.userName.substring(0,1).toUpperCase() : "?";
+                const isSelf = p.userName === userName;
+                const badgeColor = colors[idx % colors.size || idx % 5];
+                
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-2.5 border-2 border-[#2C1A11] rounded-xl bg-white";
+                
+                let buzzStatusBox = "";
+                if (isBuzzed && session.startTime) {
+                    const elapsed = (p.buzzTime - session.startTime);
+                    const parsedSeconds = (Math.abs(elapsed) / 1000).toFixed(2);
+                    const sign = elapsed < 0 ? "-" : "+";
+                    buzzStatusBox = `<span class="text-[10px] font-black bg-[#6EDC14] border-1.5 border-[#2C1A11] px-2 py-0.5 rounded-lg shadow-[1px_1px_0px_rgba(44,26,17,1)]">${sign}${parsedSeconds}s</span>`;
+                } else if (isBuzzed) {
+                    buzzStatusBox = `<span class="text-[10px] font-black bg-[#FF6694] text-white border-1.5 border-[#2C1A11] px-2 py-0.5 rounded-lg shadow-[1px_1px_0px_rgba(44,26,17,1)]">⚡ BUZZ!</span>`;
+                }
+                
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-7 h-7 rounded-full border border-[#2C1A11] flex items-center justify-center font-black text-xs" style="background-color: ${badgeColor}">${userInitial}</div>
+                        <span class="text-xs font-extrabold ${isSelf ? 'text-[#FF6694]' : 'text-[#2C1A11]'}">${p.userName} ${isSelf ? '(YOU)' : ''}</span>
+                    </div>
+                    ${buzzStatusBox}
+                `;
+                pList.appendChild(item);
+            });
+            
+            // Real-time render round host winners
+            const historyBox = document.getElementById('history-box');
+            const historyList = document.getElementById('history-list');
+            if (session.roundHistory && session.roundHistory.length > 0) {
+                historyBox.classList.remove('hidden');
+                historyList.innerHTML = "";
+                session.roundHistory.slice().reverse().forEach(h => {
+                    const node = document.createElement('div');
+                    node.className = "flex justify-between py-1 border-b border-dashed border-[#2C1A11]/10";
+                    node.innerHTML = `<span>👑 ROUND ${h.roundNumber}:</span> <span class="font-black text-[#FF6694]">${h.winnerName || 'No Winner Tapped'}</span>`;
+                    historyList.appendChild(node);
+                });
+            } else {
+                historyBox.classList.add('hidden');
+            }
+        }
+
+        // Buzz In Click Action
+        async function buzzIn() {
+            const buzzerBtn = document.getElementById('giant-buzzer');
+            buzzerBtn.disabled = true; // prevent double buzz glitch
+            
+            // Visual optimistic pop triggers
+            buzzerBtn.classList.add('animate-bouncy');
+            AudioSynth.playBuzz();
+
+            try {
+                const response = await fetch('/api/session/buzz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, userName })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    renderSessionState(data);
+                }
+            } catch (err) {
+                console.error("Buzzed submit failed:", err);
+            }
+        }
+    </script>
+</body>
+</html>

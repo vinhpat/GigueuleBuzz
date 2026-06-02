@@ -17,7 +17,11 @@ class ParticipantAdapter {
             while (reader.hasNext()) {
                 val name = reader.nextName()
                 if (name == "userName") {
-                    userName = reader.nextString()
+                    if (reader.peek() == JsonReader.Token.NULL) {
+                        reader.nextNull<Nothing?>()
+                    } else {
+                        userName = reader.nextString().orEmpty()
+                    }
                 } else if (name == "buzzTime") {
                     if (reader.peek() == JsonReader.Token.NULL) {
                         reader.nextNull<Nothing?>()

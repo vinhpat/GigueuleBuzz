@@ -2,34 +2,39 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Indigo50 = Color(0xFFEEF2FF)
-val Indigo100 = Color(0xFFE0E7FF)
-val Indigo200 = Color(0xFFC7D2FE)
-val Indigo500 = Color(0xFF6366F1)
-val Indigo600 = Color(0xFF4F46E5)
-val Indigo700 = Color(0xFF4338CA)
-val Indigo800 = Color(0xFF3730A3)
-val Indigo900 = Color(0xFF312E81)
+// --- BUBBLY & GOOFY CARTOONY PALETTE ---
+// Handpicked warm, cheerful cartoon paint colors
+val CuteCocoaCharcoal = Color(0xFF2C1A11) // Warm rich chocolate brown for text & outlines
+val CuteVanillaCream = Color(0xFFFFFDF4) // Soft, cozy marshmallow background
+val CuteCloudWhite = Color(0xFFFFFFFF) // High-contrast clean card surfaces
+val CuteSunnyYellow = Color(0xFFFFD633) // Primary yellow: cheerful, sweet, energetic
+val CuteMangoOrange = Color(0xFFFF9E1B) // Warm rich orange accents
+val CuteBubblegumPink = Color(0xFFFF6694) // Sweet berry pink for secondary nodes
+val CuteSkyBlue = Color(0xFF4CC9F0) // Refreshing water bubble blue for connection lines
+val CuteLimeSoda = Color(0xFF6EDC14) // Fizzy green for active states/buses
+val CuteCherryRed = Color(0xFFFF4757) // Bright goofy red for errors/aborts
 
-val Slate100 = Color(0xFFF1F5F9)
-val Slate400 = Color(0xFF94A3B8)
-val Slate500 = Color(0xFF64748B)
-val Slate600 = Color(0xFF475569)
-val Slate700 = Color(0xFF334155)
-val Slate900 = Color(0xFF0F172A)
+// Mapping to Sleek design tokens for compatibility
+val PrimarySleek = CuteSunnyYellow
+val OnPrimarySleek = CuteCocoaCharcoal
+val PrimaryContainerSleek = CuteCloudWhite
+val OnPrimaryContainerSleek = CuteCocoaCharcoal
 
-val BackgroundSleek = Color(0xFFF6F8FF)
-val SurfaceSleek = Color(0xFFFFFFFF)
+val SecondarySleek = CuteBubblegumPink
+val OnSecondarySleek = CuteCloudWhite
+val SecondaryContainerSleek = CuteCloudWhite
+val OnSecondaryContainerSleek = CuteCocoaCharcoal
 
-val PrimarySleek = Indigo600
-val OnPrimarySleek = Color.White
-val PrimaryContainerSleek = Indigo100
-val OnPrimaryContainerSleek = Indigo900
+val BackgroundSleek = CuteVanillaCream
+val SurfaceSleek = CuteCloudWhite
 
-val SecondarySleek = Slate600
-val OnSecondarySleek = Color.White
-val SecondaryContainerSleek = Slate100
-val OnSecondaryContainerSleek = Slate700
+// Compatibility with slate variables used in other files
+val Slate100 = CuteVanillaCream
+val Slate400 = CuteCocoaCharcoal.copy(alpha = 0.4f)
+val Slate500 = CuteCocoaCharcoal.copy(alpha = 0.6f)
+val Slate600 = CuteCocoaCharcoal.copy(alpha = 0.8f)
+val Slate700 = CuteCocoaCharcoal
+val Slate900 = CuteCocoaCharcoal
 
-val ErrorSleek = Color(0xFFEF4444)
-val OnErrorSleek = Color.White
+val ErrorSleek = CuteCherryRed
+val OnErrorSleek = CuteCloudWhite

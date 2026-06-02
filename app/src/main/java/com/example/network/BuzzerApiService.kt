@@ -12,7 +12,7 @@ data class ParticipantDto(
 )
 
 data class RoundHistoryDto(
-    val roundNumber: Int,
+    val roundNumber: Int? = null,
     val winnerName: String? = null
 )
 
@@ -21,8 +21,8 @@ data class SessionDto(
     val sessionName: String? = null,
     val description: String? = null,
     val maxParticipants: Int? = null,
-    val status: String, // "waiting", "active", "stopped"
-    val questionCounter: Int = 1,
+    val status: String? = null, // "waiting", "active", "stopped"
+    val questionCounter: Int? = null,
     val startTime: Long? = null,
     val participants: List<ParticipantDto>? = emptyList(),
     val roundHistory: List<RoundHistoryDto>? = emptyList()

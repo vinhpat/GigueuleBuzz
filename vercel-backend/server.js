@@ -1,16 +1,40 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
+    // If browser client requests the home page, serve our beautiful, responsive play console web app!
+    if (req.headers.accept && req.headers.accept.includes('text/html')) {
+        try {
+            const htmlPath = path.join(__dirname, 'index.html');
+            if (fs.existsSync(htmlPath)) {
+                return res.sendFile(htmlPath);
+            }
+        } catch (err) {
+            console.error("Failed to serve web client:", err);
+        }
+    }
     res.json({ status: "ok", message: "PaddyBuzz API is running", version: "1.0.0" });
 });
 
-// In-memory store for fallback/local Proof of Concept.
+// In-memory store cache for active games.
 const sessions = {};
+
+// Local disk cache folder fallback to make serverless deployments completely state-resilient!
+const sessionDir = path.join(os.tmpdir(), 'paddybuzz_sessions');
+try {
+    if (!fs.existsSync(sessionDir)) {
+        fs.mkdirSync(sessionDir, { recursive: true });
+    }
+} catch (e) {
+    console.error("Failed to create backup cache directory:", e);
+}
 
 // Initialize Supabase Client
 const { createClient } = require('@supabase/supabase-js');
@@ -19,7 +43,7 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
     supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
     console.log("Supabase client initialized successfully");
 } else {
-    console.log("Warning: SUPABASE_URL and SUPABASE_KEY not configured. Falling back to memory-only store.");
+    console.log("Warning: SUPABASE_URL and SUPABASE_KEY not configured. Falling back to resilient local file cache store.");
 }
 
 // Read/write helpers
@@ -36,7 +60,26 @@ async function getSession(sessionId) {
         }
         return data ? data.data : null;
     }
-    return sessions[sessionId] || null;
+    
+    // In memory Cache
+    if (sessions[sessionId]) {
+        return sessions[sessionId];
+    }
+    
+    // Fall back to resilient OS tmp filesystem cache
+    try {
+        const filePath = path.join(sessionDir, `${sessionId.toUpperCase()}.json`);
+        if (fs.existsSync(filePath)) {
+            const fileData = fs.readFileSync(filePath, 'utf8');
+            const data = JSON.parse(fileData);
+            sessions[sessionId] = data; // Cache in memory too
+            return data;
+        }
+    } catch (e) {
+        console.error(`Error loading cached session ${sessionId}:`, e.message);
+    }
+    
+    return null;
 }
 
 async function saveSession(sessionId, sessionData) {
@@ -54,7 +97,16 @@ async function saveSession(sessionId, sessionData) {
         }
         return;
     }
+    
     sessions[sessionId] = sessionData;
+    
+    // Save to resilient OS tmp filesystem cache
+    try {
+        const filePath = path.join(sessionDir, `${sessionId.toUpperCase()}.json`);
+        fs.writeFileSync(filePath, JSON.stringify(sessionData, null, 2), 'utf8');
+    } catch (e) {
+        console.error(`Error saving fallback session cache for ${sessionId}:`, e.message);
+    }
 }
 
 // Helper to generate random ID
